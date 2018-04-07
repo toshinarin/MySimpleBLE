@@ -11,21 +11,17 @@
 import UIKit
 import CoreBluetooth
 
-//Central : 本アプリ
-//Peripheral : ESP32
+// Central : 本アプリ
+// Peripheral : ESP32
 final class ViewController: UIViewController {
     @IBOutlet private weak var messageTextField: UITextField!
 
     // GATTサービス https://www.bluetooth.com/ja-jp/specifications/gatt/services
-    let kServiveUUIDESP32 = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
-
-    // Attribute Types (UUIDs)
-    let kCharacteristcUUIDESP32EpaperWriter = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
+    let serviveUUIDESP32 = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
+    let characteristcUUIDESP32EpaperWriter = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
 
     private var centralManager: CBCentralManager!
     private var peripheral: CBPeripheral!
-    private var serviceUUID : CBUUID!
-    private var charcteristicUUID: CBUUID!
     private var epaperCharacteristic: CBCharacteristic?
 
     override func viewDidLoad() {
@@ -35,13 +31,6 @@ final class ViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-    }
-
-    /// セントラルマネージャー、UUIDの初期化
-    private func setup() {
-        centralManager = CBCentralManager(delegate: self, queue: nil)
-        serviceUUID = CBUUID(string: kServiveUUIDESP32)
-        charcteristicUUID = CBUUID(string: kCharacteristcUUIDESP32EpaperWriter)
     }
 
     @IBAction func startScan(_ sender: Any) {
@@ -56,6 +45,10 @@ final class ViewController: UIViewController {
         let string = messageTextField.text ?? ""
         let data = string.data(using: String.Encoding.utf8)
         self.peripheral.writeValue(data!, for: c,type: CBCharacteristicWriteType.withResponse)
+    }
+
+    private func setup() {
+        centralManager = CBCentralManager(delegate: self, queue: nil)
     }
 
     private func scanForPeripherals() {
@@ -102,6 +95,7 @@ extension ViewController: CBCentralManagerDelegate {
     func centralManager(_ central: CBCentralManager,
                         didConnect peripheral: CBPeripheral) {
         peripheral.delegate = self
+        let serviceUUID = CBUUID(string: serviveUUIDESP32)
         peripheral.discoverServices([serviceUUID])
     }
 }
@@ -130,6 +124,7 @@ extension ViewController: CBPeripheralDelegate {
 
         //キャラクタリスティック探索開始
         print("discover characteristics for peripheral \(peripheral) start")
+        let charcteristicUUID = CBUUID(string: characteristcUUIDESP32EpaperWriter)
         peripheral.discoverCharacteristics([charcteristicUUID],
                                            for: service)
     }
@@ -150,7 +145,7 @@ extension ViewController: CBPeripheralDelegate {
         }
 
         for characteristic in characteristics {
-            if (characteristic.uuid.uuidString != kCharacteristcUUIDESP32EpaperWriter) {
+            if (characteristic.uuid.uuidString != characteristcUUIDESP32EpaperWriter) {
                 continue
             }
             print("epaperCharacteristic: \(characteristic)")
