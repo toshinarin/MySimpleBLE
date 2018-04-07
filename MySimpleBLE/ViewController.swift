@@ -21,7 +21,7 @@ final class ViewController: UIViewController {
     let characteristcUUIDESP32EpaperWriter = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
 
     private var centralManager: CBCentralManager!
-    private var peripheral: CBPeripheral!
+    private var peripheral: CBPeripheral?
     private var epaperCharacteristic: CBCharacteristic?
 
     override func viewDidLoad() {
@@ -39,12 +39,16 @@ final class ViewController: UIViewController {
 
     @IBAction func sendMessage(_ sender: Any) {
         print("sending data")
-        guard let c = self.epaperCharacteristic else {
-            return
-        }
-        let string = messageTextField.text ?? ""
-        let data = string.data(using: String.Encoding.utf8)
-        self.peripheral.writeValue(data!, for: c,type: CBCharacteristicWriteType.withResponse)
+        guard let characteristic = self.epaperCharacteristic else { return }
+        guard let peripheral = self.peripheral else { return }
+
+        let message = messageTextField.text ?? ""
+        guard let data = message.data(using: String.Encoding.utf8) else { return }
+
+        peripheral.writeValue(data,
+                              for: characteristic,
+                              type: CBCharacteristicWriteType.withResponse)
+        print("sent data")
     }
 
     private func setup() {
@@ -77,18 +81,16 @@ extension ViewController: CBCentralManagerDelegate {
                         didDiscover peripheral: CBPeripheral,
                         advertisementData: [String : Any],
                         rssi RSSI: NSNumber) {
-        guard let name = advertisementData[CBAdvertisementDataLocalNameKey] as? String else { return }
-        if name != "ESP32 E-paper Service" {
-            return
-        }
+        let nameData = advertisementData[CBAdvertisementDataLocalNameKey]
+        guard let name = nameData as? String else { return }
+        guard name == "ESP32 E-paper Service" else { return }
+
         self.peripheral = peripheral
-        print("services: \(peripheral)")
+        print("peripheral: \(peripheral)")
 
-        centralManager.stopScan()
-
-        //接続開始
-        print("link start")
+        central.stopScan()
         central.connect(peripheral, options: nil)
+        print("link start")
     }
 
     /// 接続されると呼ばれる
