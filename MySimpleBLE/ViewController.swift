@@ -150,19 +150,22 @@ extension ViewController: CBPeripheralDelegate {
             if (characteristic.uuid.uuidString != characteristcUUIDESP32EpaperWriter) {
                 continue
             }
+            print("sending data")
             print("epaperCharacteristic: \(characteristic)")
             self.epaperCharacteristic = characteristic
 
-            let date = Date()
+            // 電子ペーパーに書き込むメッセージ
             let formatter = DateFormatter()
-            formatter.locale = Locale(identifier: "en_US")
             formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-            let dateStr = formatter.string(from: date)
-            let string = "connected from iPhone [\(dateStr)]"
-            let data = string.data(using: String.Encoding.ascii)
+            let dateStr = formatter.string(from: Date())
+            let message = "connected from iPhone [\(dateStr)]"
+            guard let data = message.data(using: String.Encoding.ascii) else { return }
 
-            print("sending data")
-            peripheral.writeValue(data!, for: characteristic,type: CBCharacteristicWriteType.withResponse)
+            peripheral.writeValue(data,
+                                  for: characteristic,
+                                  type: CBCharacteristicWriteType.withResponse)
+            print("sent data")
+            break
         }
     }
 
